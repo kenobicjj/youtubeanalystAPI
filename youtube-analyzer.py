@@ -10,6 +10,7 @@ import requests
 import json
 from youtube_transcript_api import YouTubeTranscriptApi
 from dotenv import load_dotenv
+import time  # Add this import at the top of your file
 
 app = Flask(__name__)
 
@@ -252,6 +253,9 @@ def analyze():
     if not video_id:
         return jsonify({'error': 'Invalid YouTube URL'}), 400
     
+    # Start timing
+    start_time = time.time()
+
     # Get video details
     video_details = get_video_details(video_id)
     if not video_details:
@@ -278,11 +282,15 @@ def analyze():
     if gemma_keywords:
         analysis['keywords'] = gemma_keywords
     
+    # Calculate elapsed time
+    elapsed_time = time.time() - start_time
+
     return jsonify({
         'video': video_details,
         'summary': summary,
         'analysis': analysis,
-        'using_gemma': True
+        'using_gemma': True,
+        'elapsed_time': elapsed_time  # Add elapsed time to the response
     })
 
 @app.route('/save_api_key', methods=['POST'])

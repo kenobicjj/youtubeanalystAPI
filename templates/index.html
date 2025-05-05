@@ -116,6 +116,7 @@
                     </div>
                     <p class="card-text"><strong>Keywords:</strong></p>
                     <div id="keywords-container"></div>
+                    <p class="card-text"><strong>Elapsed Time:</strong> <span id="elapsed-time"></span> seconds</p>
                 </div>
             </div>
         </div>
@@ -206,6 +207,9 @@
                     keywordTag.textContent = `${keyword[0]} (${keyword[1]})`;
                     keywordsContainer.appendChild(keywordTag);
                 });
+
+                // Display elapsed time
+                document.getElementById('elapsed-time').textContent = data.elapsed_time.toFixed(2);
             })
             .catch(error => {
                 document.getElementById('loading').style.display = 'none';
