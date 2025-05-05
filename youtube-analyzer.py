@@ -43,6 +43,7 @@ def get_video_id(youtube_url):
         match = re.search(pattern, youtube_url)
         if match:
             video_id = match.group(1)
+            print(f"Extracted video ID: {video_id}")  # Debug log
             break
     
     return video_id
@@ -77,13 +78,20 @@ def get_video_details(video_id):
 
 def get_video_transcript(video_id):
     """Get the transcript of a YouTube video."""
-    try:
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
-        transcript = ' '.join([item['text'] for item in transcript_list])
-        return transcript
-    except Exception as e:
-        print(f"Error fetching transcript: {str(e)}")
-        return None
+    # List of language codes to try
+    languages = ['en-US', 'en-GB', 'en-AU', 'en']  # Add other English variants as needed
+
+    for lang in languages:
+        try:
+            # Attempt to fetch the transcript in the current language
+            transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=[lang])
+            transcript = ' '.join([item['text'] for item in transcript_list])
+            return transcript
+        except Exception as e:
+            print(f"Error fetching transcript for video ID {video_id} in language {lang}: {str(e)}")  # Debug log
+
+    # If no transcripts were found in any of the specified languages
+    return None
 
 def generate_summary_with_ollama(transcript, max_length=1000):
     """Generate a summary using Ollama with Gemma model."""
@@ -225,7 +233,7 @@ def index():
 def check_ollama():
     """Check if Ollama is running and the model is available."""
     try:
-        response = requests.post(
+        response = requests.get(
             "http://localhost:11434/api/tags",
             timeout=5
         )
@@ -234,6 +242,7 @@ def check_ollama():
             models = response.json().get("models", [])
             return jsonify({"status": "ok", "models": models})
         else:
+            print(f"Ollama server returned an error: {response.status_code} - {response.text}")  # Log the error
             return jsonify({"status": "error", "message": "Ollama server returned an error."})
     except requests.exceptions.ConnectionError:
         return jsonify({"status": "error", "message": "Cannot connect to Ollama server. Make sure it's running."})
@@ -306,6 +315,14 @@ def save_api_key():
         f.write(f'YOUTUBE_API_KEY={api_key}\n')
 
     return jsonify({'message': 'API key saved successfully.'})
+
+@app.route('/test_ollama')
+def test_ollama():
+    try:
+        response = requests.post("http://localhost:11434/api/tags", timeout=5)
+        return jsonify({"status": response.status_code, "data": response.json()})
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True)
