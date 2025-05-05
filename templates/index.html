@@ -1,0 +1,275 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Video Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            background-color: #f8f9fa;
+        }
+        .card {
+            margin-bottom: 1.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 2rem;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        #results {
+            display: none;
+        }
+        .keyword-tag {
+            display: inline-block;
+            background-color: #e9ecef;
+            padding: 0.25rem 0.5rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        .thumbnail-container {
+            max-width: 100%;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        .thumbnail-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">YouTube Video Analyzer</h1>
+        
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Enter YouTube URL</h5>
+                <div class="input-group mb-3">
+                    <input type="text" id="youtube-url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+                    <button class="btn btn-primary" id="analyze-btn">Analyze</button>
+                </div>
+                <div class="form-text">Paste a YouTube video URL to analyze and summarize its content.</div>
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Analyzing video... This might take a moment.</p>
+        </div>
+        
+        <div id="results">
+            <div class="card" id="video-info">
+                <div class="card-body">
+                    <h5 class="card-title" id="video-title"></h5>
+                    <div class="thumbnail-container">
+                        <img id="video-thumbnail" src="" alt="Video thumbnail">
+                    </div>
+                    <p class="card-text"><strong>Channel:</strong> <span id="video-channel"></span></p>
+                    <p class="card-text"><strong>Published:</strong> <span id="video-published"></span></p>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p class="card-text"><strong>Views:</strong> <span id="video-views"></span></p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="card-text"><strong>Likes:</strong> <span id="video-likes"></span></p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="card-text"><strong>Comments:</strong> <span id="video-comments"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card" id="summary-card">
+                <div class="card-body">
+                    <h5 class="card-title">Summary</h5>
+                    <p class="card-text" id="video-summary"></p>
+                </div>
+            </div>
+            
+            <div class="card" id="analysis-card">
+                <div class="card-body">
+                    <h5 class="card-title">Analysis</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p class="card-text"><strong>Word Count:</strong> <span id="word-count"></span></p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="card-text"><strong>Sentence Count:</strong> <span id="sentence-count"></span></p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="card-text"><strong>Avg. Word Length:</strong> <span id="avg-word-length"></span></p>
+                        </div>
+                    </div>
+                    <p class="card-text"><strong>Keywords:</strong></p>
+                    <div id="keywords-container"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-danger" id="error-message" style="display: none;"></div>
+
+        <form id="apiKeyForm">
+            <label for="youtubeApiKey">YouTube API Key:</label>
+            <input type="text" id="youtubeApiKey" name="youtubeApiKey" required>
+            <button type="submit">Save API Key</button>
+        </form>
+
+        <!--<form id="ollamaModelForm">
+            <label for="ollamaModel">Select Ollama Model:</label>
+            <select id="ollamaModel" name="ollamaModel">
+                <option value="gemma" selected>gemma</option>
+            </select>
+            <button type="submit">Submit</button>
+        </form>-->
+    </div>
+
+    <script>
+        document.getElementById('analyze-btn').addEventListener('click', function() {
+            const youtubeUrl = document.getElementById('youtube-url').value.trim();
+            
+            if (!youtubeUrl) {
+                showError('Please enter a YouTube URL');
+                return;
+            }
+            
+            // Show loading spinner
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error-message').style.display = 'none';
+            
+            // Send request to server
+            fetch('/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: youtubeUrl }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading spinner
+                document.getElementById('loading').style.display = 'none';
+                
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+                
+                // Show results
+                document.getElementById('results').style.display = 'block';
+                
+                // Fill video info
+                document.getElementById('video-title').textContent = data.video.title;
+                document.getElementById('video-channel').textContent = data.video.channel;
+                document.getElementById('video-published').textContent = formatDate(data.video.published_at);
+                document.getElementById('video-views').textContent = formatNumber(data.video.view_count);
+                document.getElementById('video-likes').textContent = formatNumber(data.video.like_count);
+                document.getElementById('video-comments').textContent = formatNumber(data.video.comment_count);
+                document.getElementById('video-thumbnail').src = data.video.thumbnail;
+                
+                // Check if summary is available
+                if (!data.summary) {
+                    document.getElementById('summary-card').style.display = 'none';
+                    document.getElementById('analysis-card').style.display = 'none';
+                    showError('Could not fetch transcript. The video might not have captions.');
+                    return;
+                }
+                
+                // Fill summary
+                document.getElementById('video-summary').textContent = data.summary;
+                
+                // Fill analysis
+                document.getElementById('word-count').textContent = formatNumber(data.analysis.word_count);
+                document.getElementById('sentence-count').textContent = formatNumber(data.analysis.sentence_count);
+                document.getElementById('avg-word-length').textContent = data.analysis.average_word_length;
+                
+                // Fill keywords
+                const keywordsContainer = document.getElementById('keywords-container');
+                keywordsContainer.innerHTML = '';
+                data.analysis.keywords.forEach(keyword => {
+                    const keywordTag = document.createElement('span');
+                    keywordTag.className = 'keyword-tag';
+                    keywordTag.textContent = `${keyword[0]} (${keyword[1]})`;
+                    keywordsContainer.appendChild(keywordTag);
+                });
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                showError('Error connecting to server. Please try again.');
+                console.error('Error:', error);
+            });
+        });
+        
+        function showError(message) {
+            const errorElement = document.getElementById('error-message');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+        
+        function formatNumber(number) {
+            return parseInt(number).toLocaleString();
+        }
+
+        // Fetch available Ollama models and populate the dropdown
+        fetch('/check_ollama')
+            .then(response => response.json())
+            .then(data => {
+                const modelSelect = document.getElementById('ollamaModel');
+                if (data.status === 'ok') {
+                    // Populate the dropdown with available models
+                    data.models.forEach(model => {
+                        if (model.name !== "gemma3") { // Avoid adding the default model again
+                            const option = document.createElement('option');
+                            option.value = model.name; 
+                            option.textContent = model.name;
+                            modelSelect.appendChild(option);
+                        }
+                    });
+                } else {
+                    console.error(data.message);  // Log any error messages
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching Ollama models:', error);
+            });
+
+        // Handle API Key form submission
+        document.getElementById('apiKeyForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const apiKey = document.getElementById('youtubeApiKey').value;
+
+            // Save the API key to the .env file
+            fetch('/save_api_key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ apiKey })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            });
+        });
+    </script>
+</body>
+</html>

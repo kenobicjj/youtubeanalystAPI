@@ -1,0 +1,33 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Environment variables file
+.env
+
+# Flask instance folder
+instance/
+
+# Byte-compiled files
+*.pyc
+*.pyo
+
+# Distribution / packaging
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Other files to ignore
+*.DS_Store
