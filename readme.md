@@ -2,7 +2,7 @@
 
 A Flask-based web application that analyzes YouTube videos by fetching their details, transcripts, and generating summaries and keyword analyses using the Ollama API.
 ![alt text]([http://](https://github.com/kenobicjj/youtubeanalystAPI/tree/main/YoutubeAPI-class.png)
-/youtubeAPI sequence.png)
+
 ## Features
 
 - Enter a YouTube video URL to analyze.
