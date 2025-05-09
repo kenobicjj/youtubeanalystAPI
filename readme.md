@@ -4,7 +4,7 @@ A Flask-based web application that analyzes YouTube videos by fetching their det
 
 ## Diagram
 
-![YouTube API Class Diagram](https://github.com/kenobicjj/youtubeanalystAPI/blob/main/Youtube
+![YouTube API Class Diagram](YoutubeAPI-class.png)
 
 ## Features
 
